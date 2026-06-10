@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Matriz de Eisenhower</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0eeea;min-height:100vh;padding:24px 16px 40px}
+h1{text-align:center;font-size:28px;font-weight:600;color:#2d2d2d;margin-bottom:4px}
+.subtitle{text-align:center;font-size:11px;letter-spacing:2px;color:#aaa;margin-bottom:20px;text-transform:uppercase}
+
+/* config banner */
+#config-bar{background:#fff3cd;border:1px solid #f5c842;border-radius:10px;padding:12px 16px;max-width:1060px;margin:0 auto 16px;font-size:13px;color:#7a5c00;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#config-bar input{flex:1;min-width:220px;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px}
+#config-bar button{padding:7px 16px;border:none;border-radius:8px;background:#f5c842;color:#5a3e00;font-weight:700;cursor:pointer;font-size:12px}
+#config-bar button:hover{background:#e6b800}
+#status-bar{max-width:1060px;margin:0 auto 10px;font-size:12px;color:#aaa;text-align:right;display:flex;justify-content:space-between;align-items:center;padding:0 4px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block;margin-right:5px}
+.status-dot.ok{background:#7ac96a}
+.status-dot.err{background:#f87c5a}
+.status-dot.loading{background:#f5c842}
+
+.toolbar{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.toolbar label{font-size:13px;color:#555;display:flex;align-items:center;gap:6px}
+.toolbar input[type=date],.toolbar select{padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fff;color:#333}
+.toolbar button{padding:6px 16px;border:1px solid #ccc;border-radius:8px;font-size:13px;background:#fff;color:#555;cursor:pointer}
+.toolbar button:hover{background:#eee}
+.count-badge{background:#e0e0e0;border-radius:20px;padding:5px 14px;font-size:13px;color:#555;font-weight:500}
+
+.outer{display:flex;align-items:stretch;max-width:1060px;margin:0 auto;gap:0}
+.side-label-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;width:28px;flex-shrink:0}
+.side-label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;letter-spacing:3px;color:#bbb;text-transform:uppercase;font-weight:600}
+.matrix-col{flex:1;display:flex;flex-direction:column;gap:0}
+.col-headers{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-left:8px;margin-bottom:6px}
+.col-header{text-align:center;font-size:10px;letter-spacing:2.5px;color:#aaa;text-transform:uppercase;font-weight:600}
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-left:8px}
+
+.quadrant{border-radius:14px;padding:14px;border:1.5px solid transparent;display:flex;flex-direction:column;gap:8px}
+.q-hacer{background:#fff5f3;border-color:#f5c5b8}
+.q-planificar{background:#f3fbf0;border-color:#b8dfa8}
+.q-delegar{background:#eef4ff;border-color:#b0ccf5}
+.q-eliminar{background:#f5f5f5;border-color:#d8d8d8}
+.q-header{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.q-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.q-hacer .q-icon{background:#f87c5a;color:#fff}
+.q-planificar .q-icon{background:#7ac96a;color:#fff}
+.q-delegar .q-icon{background:#4e88e5;color:#fff}
+.q-eliminar .q-icon{background:#aaa;color:#fff}
+.q-name{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.q-hacer .q-name{color:#c94a22}
+.q-planificar .q-name{color:#3a8a28}
+.q-delegar .q-name{color:#2256b8}
+.q-eliminar .q-name{color:#666}
+.q-sub{font-size:11px;color:#aaa;margin-top:1px}
+
+.tasks{display:flex;flex-direction:column;gap:7px}
+.empty-msg{text-align:center;font-size:12px;color:#ccc;padding:18px 0}
+
+.task-card{background:#fff;border-radius:10px;border:1px solid #eee;padding:9px 11px;display:flex;flex-direction:column;gap:5px}
+.task-card.done .task-name{text-decoration:line-through;color:#bbb}
+.task-card.carried{border-left:3px solid #f5a623}
+.task-card.pending-today{border-left:3px solid #f5c842}
+.carried-chip{display:inline-flex;align-items:center;gap:3px;background:#fff3e0;color:#c07000;font-size:10px;font-weight:700;border-radius:8px;padding:2px 7px;border:1px solid #f5d08a;margin-bottom:2px}
+.pending-chip{display:inline-flex;align-items:center;gap:3px;background:#fffbe6;color:#a07a10;font-size:10px;font-weight:700;border-radius:8px;padding:2px 7px;border:1px solid #f5e08a;margin-bottom:2px}
+
+.task-top{display:flex;align-items:flex-start;gap:8px}
+.task-check{width:17px;height:17px;border-radius:5px;cursor:pointer;flex-shrink:0;margin-top:2px}
+.q-hacer .task-check{accent-color:#f87c5a}
+.q-planificar .task-check{accent-color:#7ac96a}
+.q-delegar .task-check{accent-color:#4e88e5}
+.q-eliminar .task-check{accent-color:#aaa}
+.task-name{flex:1;font-size:12px;font-weight:600;color:#2d2d2d;line-height:1.45;text-transform:uppercase;letter-spacing:.2px}
+.task-actions{display:flex;gap:2px;flex-shrink:0}
+.task-actions button{background:none;border:none;cursor:pointer;padding:2px 3px;border-radius:4px;font-size:13px;color:#ccc;line-height:1}
+.task-actions button:hover{color:#888;background:#f0f0f0}
+.task-meta{display:flex;align-items:center;gap:7px;padding-left:25px;flex-wrap:wrap}
+.priority-badge{padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-alta{background:#fde8e2;color:#c94a22}
+.badge-media{background:#fff3cd;color:#a07a10}
+.badge-baja{background:#e2f0e8;color:#3a8a28}
+.task-date{font-size:11px;color:#aaa;display:flex;align-items:center;gap:3px}
+.orig-date{font-size:10px;color:#dbb;text-decoration:line-through}
+
+.add-form{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.add-row1{display:flex;gap:5px}
+.add-row1 input[type=text]{flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px;color:#333;background:#fff}
+.add-row1 input[type=text]::placeholder{color:#ccc}
+.add-row1 button{width:32px;height:32px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:18px;color:#888;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.add-row1 button:hover{background:#f5f5f5}
+.add-row2{display:flex;gap:5px}
+.add-row2 input[type=date],.add-row2 select{flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;color:#555;background:#fff}
+
+.info-banner{display:flex;align-items:center;gap:8px;background:#fff8ec;border:1px solid #f5d08a;border-radius:10px;padding:8px 14px;max-width:1060px;margin:0 auto 16px;font-size:12px;color:#a07a10}
+footer{text-align:center;margin-top:28px;font-size:11px;color:#ccc}
+
+/* loading overlay */
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid #ddd;border-top-color:#f87c5a;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<h1>Matriz de Eisenhower</h1>
+<p class="subtitle">Organización de tareas por urgencia e importancia</p>
+
+<!-- Barra de configuración URL -->
+<div id="config-bar" style="display:none">
+  <span>🔗 Pegá la URL de tu Apps Script para conectar con Google Sheets:</span>
+  <input type="text" id="script-url" placeholder="https://script.google.com/macros/s/XXXXXX/exec"/>
+  <button onclick="conectar()">Conectar</button>
+</div>
+
+<!-- Estado de conexión -->
+<div id="status-bar">
+  <span><span class="status-dot" id="status-dot"></span><span id="status-txt">Sin conectar — guardando localmente</span></span>
+  <span id="last-sync"></span>
+</div>
+
+<div class="info-banner" id="info-banner">
+  ⏰ <span id="info-text">Las tareas no completadas pasan al día siguiente a las <strong>19:00 hs</strong>.</span>
+</div>
+
+<div class="toolbar">
+  <label>📅 Fecha: <input type="date" id="filter-date" onchange="applyFilters()"/></label>
+  <label>🚩 Prioridad:
+    <select id="filter-priority" onchange="applyFilters()">
+      <option value="">Todas</option>
+      <option value="Alta">Alta</option>
+      <option value="Media">Media</option>
+      <option value="Baja">Baja</option>
+    </select>
+  </label>
+  <button onclick="clearFilters()">Limpiar</button>
+  <button onclick="loadFromServer()" title="Actualizar">🔄 Actualizar</button>
+  <span class="count-badge" id="count-badge">0 tareas</span>
+</div>
+
+<div class="outer">
+  <div class="side-label-wrap"><div class="side-label">Importante</div></div>
+  <div class="matrix-col">
+    <div class="col-headers">
+      <div class="col-header">Urgente</div>
+      <div class="col-header">No urgente</div>
+    </div>
+    <div class="matrix">
+      <div class="quadrant q-hacer">
+        <div class="q-header"><div class="q-icon">⚡</div><div><div class="q-name">Hacer</div><div class="q-sub">Resolver de inmediato</div></div></div>
+        <div class="tasks" id="tasks-hacer"></div>
+        <div class="add-form">
+          <div class="add-row1"><input type="text" id="inp-hacer" placeholder="Nueva tarea..." maxlength="100" onkeydown="handleKey(event,'hacer')"/><button onclick="addTask('hacer')">+</button></div>
+          <div class="add-row2"><input type="date" id="date-hacer"/><select id="pri-hacer"><option>Alta</option><option>Media</option><option>Baja</option></select></div>
+        </div>
+      </div>
+      <div class="quadrant q-planificar">
+        <div class="q-header"><div class="q-icon">📅</div><div><div class="q-name">Planificar</div><div class="q-sub">Agendar para después</div></div></div>
+        <div class="tasks" id="tasks-planificar"></div>
+        <div class="add-form">
+          <div class="add-row1"><input type="text" id="inp-planificar" placeholder="Nueva tarea..." maxlength="100" onkeydown="handleKey(event,'planificar')"/><button onclick="addTask('planificar')">+</button></div>
+          <div class="add-row2"><input type="date" id="date-planificar"/><select id="pri-planificar"><option>Alta</option><option>Media</option><option>Baja</option></select></div>
+        </div>
+      </div>
+      <div class="quadrant q-delegar">
+        <div class="q-header"><div class="q-icon">👥</div><div><div class="q-name">Delegar</div><div class="q-sub">Asignar a otros</div></div></div>
+        <div class="tasks" id="tasks-delegar"></div>
+        <div class="add-form">
+          <div class="add-row1"><input type="text" id="inp-delegar" placeholder="Nueva tarea..." maxlength="100" onkeydown="handleKey(event,'delegar')"/><button onclick="addTask('delegar')">+</button></div>
+          <div class="add-row2"><input type="date" id="date-delegar"/><select id="pri-delegar"><option>Alta</option><option>Media</option><option>Baja</option></select></div>
+        </div>
+      </div>
+      <div class="quadrant q-eliminar">
+        <div class="q-header"><div class="q-icon">🗑️</div><div><div class="q-name">Eliminar</div><div class="q-sub">No vale la pena</div></div></div>
+        <div class="tasks" id="tasks-eliminar"></div>
+        <div class="add-form">
+          <div class="add-row1"><input type="text" id="inp-eliminar" placeholder="Nueva tarea..." maxlength="100" onkeydown="handleKey(event,'eliminar')"/><button onclick="addTask('eliminar')">+</button></div>
+          <div class="add-row2"><input type="date" id="date-eliminar"/><select id="pri-eliminar"><option>Media</option><option>Alta</option><option>Baja</option></select></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>Matriz de Eisenhower — compartida en tiempo real via Google Sheets</footer>
+
+<!-- Edit modal -->
+<div id="modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:340px;max-width:95vw;display:flex;flex-direction:column;gap:12px">
+    <div style="font-size:15px;font-weight:600;color:#2d2d2d">Editar tarea</div>
+    <input type="text" id="edit-name" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;width:100%" maxlength="100"/>
+    <div style="display:flex;gap:8px">
+      <input type="date" id="edit-date" style="flex:1;padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px"/>
+      <select id="edit-pri" style="flex:1;padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px"><option>Alta</option><option>Media</option><option>Baja</option></select>
+    </div>
+    <div style="font-size:11px;color:#aaa" id="edit-orig-info"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeEdit()" style="padding:7px 18px;border-radius:8px;border:1px solid #ddd;background:#f0f0f0;cursor:pointer;font-size:13px">Cancelar</button>
+      <button onclick="saveEdit()" style="padding:7px 18px;border-radius:8px;border:none;background:#f87c5a;color:#fff;font-weight:600;cursor:pointer;font-size:13px">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SK='eisenhower_v9';
+const CUTOFF_HOUR=19;
+let data={hacer:[],planificar:[],delegar:[],eliminar:[]};
+let editCtx=null;
+let fDate='',fPri='';
+let SCRIPT_URL='https://script.google.com/macros/s/AKfycbx0seCy2zX_b92Tq2RvbAk23ynZtwOTMCD0uDfZS3_Kancr1x0Bz63k7_B5EFX5zivOEg/exec'; localStorage.setItem('eisenhower_url', SCRIPT_URL);
+
+// ── Conexión ──────────────────────────────────────────────
+function conectar(){
+  const url=document.getElementById('script-url').value.trim();
+  if(!url.startsWith('https://script.google.com')){
+    alert('La URL no parece válida. Debe empezar con https://script.google.com');return;
+  }
+  SCRIPT_URL=url;
+  localStorage.setItem('eisenhower_url',url);
+  document.getElementById('config-bar').style.display='none';
+  setStatus('loading','Conectando...');
+  loadFromServer();
+}
+
+function setStatus(state,txt){
+  const dot=document.getElementById('status-dot');
+  dot.className='status-dot '+(state==='ok'?'ok':state==='err'?'err':'loading');
+  document.getElementById('status-txt').textContent=txt;
+}
+
+function setLastSync(){
+  const now=new Date();
+  document.getElementById('last-sync').textContent=
+    'Última sync: '+now.toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── API calls ─────────────────────────────────────────────
+async function api(params){
+  if(!SCRIPT_URL) return null;
+  const url=SCRIPT_URL+'?'+new URLSearchParams(params).toString();
+  const res=await fetch(url, {redirect:'follow'});
+  return res.json();
+}
+
+async function loadFromServer(){
+  if(!SCRIPT_URL){renderAll();return;}
+  setStatus('loading','Cargando...');
+  try{
+    const r=await api({action:'getAll'});
+    if(r&&r.ok){
+      data=r.data;
+      // también guardar local como caché
+      localStorage.setItem(SK,JSON.stringify(data));
+      setStatus('ok','Conectado a Google Sheets ✓');
+      setLastSync();
+    } else {
+      setStatus('err','Error al cargar: '+(r&&r.error||'desconocido'));
+    }
+  }catch(e){
+    setStatus('err','Sin conexión — usando caché local');
+    // cargar desde caché
+    try{data=JSON.parse(localStorage.getItem(SK))||data}catch(x){}
+  }
+  renderAll();
+}
+
+async function serverSave(task,quadrant){
+  if(!SCRIPT_URL) return;
+  try{
+    await api({action:'save',task:JSON.stringify({...task,quadrant})});
+    setLastSync();
+  }catch(e){setStatus('err','Error al guardar');}
+}
+
+async function serverDelete(id){
+  if(!SCRIPT_URL) return;
+  try{await api({action:'delete',id});}catch(e){}
+}
+
+async function serverToggle(id,done){
+  if(!SCRIPT_URL) return;
+  try{await api({action:'toggle',id,done:String(done)});}catch(e){}
+}
+
+// ── Lógica de fechas ──────────────────────────────────────
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function addDays(s,n){const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function currentHour(){return new Date().getHours()}
+
+function effectiveDate(t){
+  if(t.done) return t.date;
+  if(!t.date) return t.date;
+  const tod=todayStr();
+  if(t.date<tod) return tod;
+  if(t.date===tod && currentHour()>=CUTOFF_HOUR) return addDays(tod,1);
+  return t.date;
+}
+function isCarried(t){return !t.done && effectiveDate(t)!==t.date}
+function isPendingToday(t){return !t.done && t.date===todayStr() && currentHour()<CUTOFF_HOUR}
+
+// ── Caché local ───────────────────────────────────────────
+function saveLocal(){try{localStorage.setItem(SK,JSON.stringify(data))}catch(e){}}
+
+// ── Render ────────────────────────────────────────────────
+function fmt(d){if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function matchesFilter(t){
+  if(fDate && effectiveDate(t)!==fDate) return false;
+  if(fPri && t.priority!==fPri) return false;
+  return true;
+}
+
+function renderAll(){
+  ['hacer','planificar','delegar','eliminar'].forEach(renderQ);
+  updateCount();
+  updateBanner();
+}
+
+function updateBanner(){
+  const h=currentHour();
+  const txt=document.getElementById('info-text');
+  if(h<CUTOFF_HOUR){
+    const rem=CUTOFF_HOUR-h;
+    txt.innerHTML=`⏰ Las tareas no completadas pasan al día siguiente a las <strong>19:00 hs</strong>. Hoy quedan <strong>${rem} hora${rem!==1?'s':''}</strong>.`;
+  } else {
+    txt.innerHTML=`⏩ Ya son las ${h}:${String(new Date().getMinutes()).padStart(2,'0')} hs — las tareas de hoy no completadas ya <strong>pasaron a mañana</strong>.`;
+  }
+}
+
+function renderQ(q){
+  const c=document.getElementById('tasks-'+q);
+  c.innerHTML='';
+  const tasks=(data[q]||[]).filter(matchesFilter);
+  if(!tasks.length){c.innerHTML='<div class="empty-msg">Sin tareas aún</div>';return;}
+  tasks.forEach(t=>{
+    const carried=isCarried(t);
+    const pendingToday=isPendingToday(t);
+    const eff=effectiveDate(t);
+    const div=document.createElement('div');
+    div.className='task-card'+(t.done?' done':'')+(carried?' carried':pendingToday?' pending-today':'');
+    let chip='';
+    if(carried) chip=`<div class="carried-chip">⏩ Arrastrada desde ${fmt(t.date)}</div>`;
+    else if(pendingToday){const r=CUTOFF_HOUR-currentHour();chip=`<div class="pending-chip">⏰ Vence hoy a las 19:00 hs — quedan ${r}h</div>`;}
+    div.innerHTML=`${chip}
+      <div class="task-top">
+        <input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggle('${q}','${t.id}',this.checked)"/>
+        <span class="task-name">${esc(t.name)}</span>
+        <div class="task-actions">
+          <button onclick="openEdit('${q}','${t.id}')">✏️</button>
+          <button onclick="del('${q}','${t.id}')">✕</button>
+        </div>
+      </div>
+      <div class="task-meta">
+        <span class="priority-badge badge-${(t.priority||'Alta').toLowerCase()}">${t.priority||'Alta'}</span>
+        <span class="task-date">📅 ${fmt(eff)}</span>
+        ${carried?`<span class="orig-date">${fmt(t.date)}</span>`:''}
+      </div>`;
+    c.appendChild(div);
+  });
+}
+
+function updateCount(){
+  let n=0;
+  ['hacer','planificar','delegar','eliminar'].forEach(q=>{n+=(data[q]||[]).filter(matchesFilter).length;});
+  document.getElementById('count-badge').textContent=n+' tarea'+(n!==1?'s':'');
+}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+function toggle(q,id,v){
+  const t=(data[q]||[]).find(x=>x.id===id);
+  if(t){t.done=v;saveLocal();renderQ(q);updateCount();serverToggle(id,v);}
+}
+
+function del(q,id){
+  data[q]=(data[q]||[]).filter(x=>x.id!==id);
+  saveLocal();renderQ(q);updateCount();serverDelete(id);
+}
+
+function addTask(q){
+  const inp=document.getElementById('inp-'+q);
+  const name=inp.value.trim().toUpperCase();
+  if(!name)return;
+  const date=document.getElementById('date-'+q).value||todayStr();
+  const priority=document.getElementById('pri-'+q).value;
+  const task={id:uid(),name,priority,date,done:false};
+  (data[q]=data[q]||[]).push(task);
+  inp.value='';
+  saveLocal();renderQ(q);updateCount();
+  serverSave(task,q);
+}
+
+function handleKey(e,q){if(e.key==='Enter')addTask(q)}
+
+function openEdit(q,id){
+  const t=(data[q]||[]).find(x=>x.id===id);
+  if(!t)return;
+  editCtx={q,id};
+  document.getElementById('edit-name').value=t.name;
+  document.getElementById('edit-date').value=t.date||'';
+  document.getElementById('edit-pri').value=t.priority||'Alta';
+  document.getElementById('edit-orig-info').textContent=
+    isCarried(t)?`📌 Fecha original: ${fmt(t.date)} — arrastrada por no completarse antes de las 19:00 hs`:'';
+  document.getElementById('modal-bg').style.display='flex';
+  setTimeout(()=>document.getElementById('edit-name').focus(),50);
+}
+function closeEdit(){document.getElementById('modal-bg').style.display='none';editCtx=null}
+function saveEdit(){
+  if(!editCtx)return;
+  const t=(data[editCtx.q]||[]).find(x=>x.id===editCtx.id);
+  if(t){
+    t.name=document.getElementById('edit-name').value.trim().toUpperCase()||t.name;
+    t.date=document.getElementById('edit-date').value;
+    t.priority=document.getElementById('edit-pri').value;
+    saveLocal();serverSave(t,editCtx.q);
+  }
+  closeEdit();renderAll();
+}
+
+function applyFilters(){fDate=document.getElementById('filter-date').value;fPri=document.getElementById('filter-priority').value;renderAll()}
+function clearFilters(){document.getElementById('filter-date').value='';document.getElementById('filter-priority').value='';fDate='';fPri='';renderAll()}
+
+// Si ya tiene URL guardada, ocultar config y conectar
+if(true){
+  document.getElementById('script-url').value=SCRIPT_URL;
+  document.getElementById('config-bar').style.display='none';
+  setStatus('loading','Reconectando...');
+}
+
+// Fechas default
+const tod=todayStr();
+['hacer','planificar','delegar','eliminar'].forEach(q=>{document.getElementById('date-'+q).value=tod});
+
+// Auto-refresh cada 30 seg
+setInterval(loadFromServer,30000);
+
+// Refresh automático a las 19:00
+function scheduleRefresh(){
+  const now=new Date();const next19=new Date(now);next19.setHours(CUTOFF_HOUR,0,5,0);
+  if(next19<=now)next19.setDate(next19.getDate()+1);
+  setTimeout(()=>{renderAll();scheduleRefresh();},next19-now);
+}
+
+document.getElementById('modal-bg').addEventListener('click',function(e){if(e.target===this)closeEdit()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeEdit()});
+
+loadFromServer();
+scheduleRefresh();
+</script>
+</body>
+</html>
